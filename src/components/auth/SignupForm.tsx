@@ -25,42 +25,15 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
     specialization: "",
     licenseNumber: "",
     phone: "",
-    username: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [usernameCheckLoading, setUsernameCheckLoading] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-
-    if (!formData.username || formData.username.length < 3) {
-      setError("Username is required and must be at least 3 characters.");
-      setLoading(false);
-      return;
-    }
-
-    // Check if username is unique
-    setUsernameCheckLoading(true);
-    const { data: existing, error: usernameError } = await supabase
-      .from('profiles')
-      .select('username')
-      .eq('username', formData.username)
-      .single();
-    setUsernameCheckLoading(false);
-    if (existing) {
-      setError('Username already taken. Please choose another.');
-      setLoading(false);
-      return;
-    }
-    if (usernameError && usernameError.code !== 'PGRST116') {
-      setError('Error checking username uniqueness.');
-      setLoading(false);
-      return;
-    }
 
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
@@ -75,13 +48,12 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
     }
 
     try {
-      console.log("Attempting to sign up user:", { email: formData.email, username: formData.username, fullName: formData.fullName, role: formData.role });
+      console.log("Attempting to sign up user:", { email: formData.email, fullName: formData.fullName, role: formData.role });
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
           data: {
-            username: formData.username,
             full_name: formData.fullName,
             role: formData.role,
             specialization: formData.specialization,
@@ -230,20 +202,6 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                placeholder="Unique username"
-                value={formData.username || ''}
-                onChange={(e) => updateFormData("username", e.target.value)}
-                required
-                minLength={3}
-                className="bg-white/20 text-black focus:bg-white/30 focus:ring-2 focus:ring-black border border-white/20 rounded-xl py-3 px-4 transition-all"
-              />
-              {usernameCheckLoading && <div className="text-xs text-black/60">Checking username...</div>}
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">

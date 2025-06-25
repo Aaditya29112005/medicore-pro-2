@@ -33,32 +33,10 @@ const LoginForm = ({ onSwitchToSignup }: LoginFormProps) => {
     setLoading(true);
     setError("");
 
-    let loginEmail = email;
-    // If input does not contain '@', treat as username
-    if (!email.includes('@')) {
-      try {
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('username', email)
-          .single();
-        if (profileError || !profile?.email) {
-          setError("Username not found. Please check your username or use your email.");
-          setLoading(false);
-          return;
-        }
-        loginEmail = profile.email;
-      } catch (err) {
-        setError("Error looking up username. Please try again.");
-        setLoading(false);
-        return;
-      }
-    }
-
     try {
-      console.log("Attempting to login user:", { loginEmail });
+      console.log("Attempting to login user:", { email });
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
+        email,
         password,
       });
       console.log("Supabase login response:", { data, error });
@@ -152,11 +130,11 @@ const LoginForm = ({ onSwitchToSignup }: LoginFormProps) => {
             )}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-black dark:text-white text-base">Email or Username</Label>
+                <Label htmlFor="email" className="text-black dark:text-white text-base">Email</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email or username"
+                  placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
