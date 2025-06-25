@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,18 +9,26 @@ import { Search, Plus, User, Phone, Mail, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
+import AddPatientModal from "./AddPatientModal";
 
 type Patient = Tables<"patients">;
 
 interface FunctionalPatientSearchProps {
   onPatientSelect: (patient: Patient) => void;
+  addPatientOpen?: boolean;
+  setAddPatientOpen?: (open: boolean) => void;
+  pendingAddPatientOpen?: boolean;
+  setPendingAddPatientOpen?: (open: boolean) => void;
 }
 
-const FunctionalPatientSearch = ({ onPatientSelect }: FunctionalPatientSearchProps) => {
+const FunctionalPatientSearch = ({ onPatientSelect, addPatientOpen, setAddPatientOpen, pendingAddPatientOpen, setPendingAddPatientOpen }: FunctionalPatientSearchProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
+  const [internalAddPatientOpen, internalSetAddPatientOpen] = useState(false);
+  const modalOpen = typeof addPatientOpen === 'boolean' ? addPatientOpen : internalAddPatientOpen;
+  const modalSetOpen = setAddPatientOpen || internalSetAddPatientOpen;
 
-  const { data: patients, isLoading } = useQuery({
+  const { data: patients, isLoading, refetch } = useQuery({
     queryKey: ["patients"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -53,6 +60,14 @@ const FunctionalPatientSearch = ({ onPatientSelect }: FunctionalPatientSearchPro
       setFilteredPatients(filtered);
     }
   }, [patients, searchQuery]);
+
+  // Effect to handle pendingAddPatientOpen
+  useEffect(() => {
+    if (pendingAddPatientOpen && setPendingAddPatientOpen) {
+      modalSetOpen(true);
+      setPendingAddPatientOpen(false);
+    }
+  }, [pendingAddPatientOpen, setPendingAddPatientOpen, modalSetOpen]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -88,6 +103,12 @@ const FunctionalPatientSearch = ({ onPatientSelect }: FunctionalPatientSearchPro
     return age;
   };
 
+  const handleAddPatientSuccess = () => {
+    // Refetch the patients list to show the new patient
+    refetch();
+    toast.success("Patient added successfully! The list has been updated.");
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -114,7 +135,10 @@ const FunctionalPatientSearch = ({ onPatientSelect }: FunctionalPatientSearchPro
               <CardTitle className="text-2xl">Patient Management</CardTitle>
               <CardDescription>Search and manage patient records</CardDescription>
             </div>
-            <Button className="bg-blue-600 hover:bg-blue-700">
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => modalSetOpen(true)}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add New Patient
             </Button>
@@ -146,7 +170,7 @@ const FunctionalPatientSearch = ({ onPatientSelect }: FunctionalPatientSearchPro
                 
                 <div className="flex-1 space-y-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                       {patient.first_name} {patient.last_name}
                     </h3>
                     <div className="flex space-x-2">
@@ -159,7 +183,7 @@ const FunctionalPatientSearch = ({ onPatientSelect }: FunctionalPatientSearchPro
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-700 dark:text-blue-200">
                     <div className="flex items-center space-x-2">
                       <User className="h-4 w-4" />
                       <span>Age: {calculateAge(patient.date_of_birth)} • {patient.gender}</span>
@@ -210,10 +234,26 @@ const FunctionalPatientSearch = ({ onPatientSelect }: FunctionalPatientSearchPro
                   ? "Try adjusting your search terms" 
                   : "Start by adding your first patient"}
               </p>
+              {!searchQuery && (
+                <Button 
+                  className="mt-4 bg-blue-600 hover:bg-blue-700"
+                  onClick={() => modalSetOpen(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Your First Patient
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}
       </div>
+
+      {/* Add Patient Modal */}
+      <AddPatientModal 
+        open={modalOpen} 
+        onClose={() => modalSetOpen(false)}
+        onSuccess={handleAddPatientSuccess}
+      />
     </div>
   );
 };

@@ -1,9 +1,12 @@
-
 import { Calendar, Phone, Mail, MapPin, AlertTriangle, Activity, FileText, Clock } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ThreeDAnimatedCard from '@/components/ui/3DAnimatedCard';
+import FloatingParticles from '@/components/FloatingParticles';
+import { motion, useSpring, useInView, useTransform } from 'framer-motion';
+import { useRef, useEffect } from 'react';
 
 interface Patient {
   id: number;
@@ -18,6 +21,15 @@ interface Patient {
   nextAppointment?: string;
   riskLevel: 'low' | 'medium' | 'high';
 }
+
+const AnimatedCounter = ({ value }: { value: number }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
+  const spring = useSpring(0, { stiffness: 100, damping: 30 });
+  const displayValue = useTransform(spring, (latest) => Math.round(latest).toLocaleString());
+  useEffect(() => { if (isInView) { spring.set(value); } }, [isInView, value, spring]);
+  return <motion.span ref={ref}>{displayValue}</motion.span>;
+};
 
 const PatientOverview = ({ patient }: { patient: Patient }) => {
   const vitals = {
@@ -67,39 +79,41 @@ const PatientOverview = ({ patient }: { patient: Patient }) => {
   };
 
   return (
-    <div className="mt-6 space-y-6">
+    <div className="mt-6 space-y-6 relative">
       {/* Patient Header */}
-      <Card className="bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg">
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-4">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-2xl font-bold">
-                {patient.name.split(' ').map(n => n[0]).join('')}
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold">{patient.name}</h2>
-                <p className="text-blue-100 text-lg">{patient.age} years old • {patient.gender}</p>
-                <div className="flex items-center space-x-4 mt-2 text-blue-100">
-                  <span className="flex items-center space-x-1">
-                    <Phone className="h-4 w-4" />
-                    <span>{patient.phone}</span>
-                  </span>
-                  <span className="flex items-center space-x-1">
-                    <Mail className="h-4 w-4" />
-                    <span>{patient.email}</span>
-                  </span>
+      <ThreeDAnimatedCard>
+        <Card className="bg-white/30 backdrop-blur-lg shadow-2xl border border-white/20 hover:shadow-blue-200/40 transition-shadow duration-300 rounded-2xl overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start space-x-4">
+                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-2xl font-bold">
+                  {patient.name.split(' ').map(n => n[0]).join('')}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">{patient.name}</h2>
+                  <p className="text-blue-100 text-lg">{patient.age} years old • {patient.gender}</p>
+                  <div className="flex items-center space-x-4 mt-2 text-blue-100">
+                    <span className="flex items-center space-x-1">
+                      <Phone className="h-4 w-4" />
+                      <span>{patient.phone}</span>
+                    </span>
+                    <span className="flex items-center space-x-1">
+                      <Mail className="h-4 w-4" />
+                      <span>{patient.email}</span>
+                    </span>
+                  </div>
                 </div>
               </div>
+              <div className="text-right">
+                <Badge className={`${getRiskColor(patient.riskLevel)} border`}>
+                  {patient.riskLevel.toUpperCase()} RISK
+                </Badge>
+                <p className="text-blue-100 mt-2">Patient ID: #{patient.id.toString().padStart(6, '0')}</p>
+              </div>
             </div>
-            <div className="text-right">
-              <Badge className={`${getRiskColor(patient.riskLevel)} border`}>
-                {patient.riskLevel.toUpperCase()} RISK
-              </Badge>
-              <p className="text-blue-100 mt-2">Patient ID: #{patient.id.toString().padStart(6, '0')}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </ThreeDAnimatedCard>
 
       {/* Patient Details Tabs */}
       <Tabs defaultValue="overview" className="w-full">
@@ -113,191 +127,203 @@ const PatientOverview = ({ patient }: { patient: Patient }) => {
 
         <TabsContent value="overview" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <FileText className="h-5 w-5 mr-2 text-blue-600" />
-                  Medical Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-semibold text-gray-900">Primary Condition</h4>
-                  <p className="text-gray-700">{patient.condition}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900">Status</h4>
-                  <Badge variant={patient.status === 'stable' ? 'default' : 'secondary'} className="capitalize">
-                    {patient.status}
-                  </Badge>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900">Last Visit</h4>
-                  <p className="text-gray-700">{patient.lastVisit}</p>
-                </div>
-                {patient.nextAppointment && (
+            <ThreeDAnimatedCard>
+              <Card className="lg:col-span-2 bg-white/30 backdrop-blur-lg shadow-2xl border border-white/20 rounded-2xl overflow-hidden">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <FileText className="h-5 w-5 mr-2 text-blue-600" />
+                    Medical Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div>
-                    <h4 className="font-semibold text-gray-900">Next Appointment</h4>
-                    <p className="text-blue-600 font-medium">{patient.nextAppointment}</p>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">Primary Condition</h4>
+                    <p className="text-gray-700 dark:text-white">{patient.condition}</p>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">Status</h4>
+                    <Badge variant={patient.status === 'stable' ? 'default' : 'secondary'} className="capitalize">
+                      {patient.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">Last Visit</h4>
+                    <p className="text-gray-700 dark:text-white">{patient.lastVisit}</p>
+                  </div>
+                  {patient.nextAppointment && (
+                    <div>
+                      <h4 className="font-semibold text-gray-900 dark:text-white">Next Appointment</h4>
+                      <p className="text-blue-600 font-medium">{patient.nextAppointment}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </ThreeDAnimatedCard>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <AlertTriangle className="h-5 w-5 mr-2 text-orange-600" />
-                  Quick Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button className="w-full justify-start" variant="outline">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Schedule Appointment
-                </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <FileText className="h-4 w-4 mr-2" />
-                  New Diagnosis
-                </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <Activity className="h-4 w-4 mr-2" />
-                  Order Tests
-                </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <Phone className="h-4 w-4 mr-2" />
-                  Contact Patient
-                </Button>
-              </CardContent>
-            </Card>
+            <ThreeDAnimatedCard>
+              <Card className="bg-white/30 backdrop-blur-lg shadow-2xl border border-white/20 rounded-2xl overflow-hidden">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <AlertTriangle className="h-5 w-5 mr-2 text-orange-600" />
+                    Quick Actions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button className="w-full justify-start" variant="outline">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Schedule Appointment
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline">
+                    <FileText className="h-4 w-4 mr-2" />
+                    New Diagnosis
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline">
+                    <Activity className="h-4 w-4 mr-2" />
+                    Order Tests
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline">
+                    <Phone className="h-4 w-4 mr-2" />
+                    Contact Patient
+                  </Button>
+                </CardContent>
+              </Card>
+            </ThreeDAnimatedCard>
           </div>
         </TabsContent>
 
         <TabsContent value="vitals" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Current Vital Signs</CardTitle>
-              <CardDescription>Latest recorded measurements</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <Activity className="h-8 w-8 mx-auto text-blue-600 mb-2" />
-                  <h4 className="font-semibold text-gray-900">Blood Pressure</h4>
-                  <p className="text-2xl font-bold text-blue-600">{vitals.bloodPressure}</p>
+          <ThreeDAnimatedCard>
+            <Card className="bg-white/30 backdrop-blur-lg shadow-2xl border border-white/20 rounded-2xl overflow-hidden">
+              <CardHeader>
+                <CardTitle>Current Vital Signs</CardTitle>
+                <CardDescription>Latest recorded measurements</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <Activity className="h-8 w-8 mx-auto text-blue-600 mb-2" />
+                    <h4 className="font-semibold text-gray-900 dark:text-white">Blood Pressure</h4>
+                    <p className="text-2xl font-bold text-blue-600"><AnimatedCounter value={parseInt(vitals.bloodPressure.split('/')[0])} />/{vitals.bloodPressure.split('/')[1]}</p>
+                  </div>
+                  <div className="text-center p-4 bg-green-50 rounded-lg">
+                    <Activity className="h-8 w-8 mx-auto text-green-600 mb-2" />
+                    <h4 className="font-semibold text-gray-900 dark:text-white">Heart Rate</h4>
+                    <p className="text-2xl font-bold text-green-600"><AnimatedCounter value={parseInt(vitals.heartRate)} /> bpm</p>
+                  </div>
+                  <div className="text-center p-4 bg-orange-50 rounded-lg">
+                    <Activity className="h-8 w-8 mx-auto text-orange-600 mb-2" />
+                    <h4 className="font-semibold text-gray-900 dark:text-white">Temperature</h4>
+                    <p className="text-2xl font-bold text-orange-600"><AnimatedCounter value={parseFloat(vitals.temperature)} />°F</p>
+                  </div>
+                  <div className="text-center p-4 bg-purple-50 rounded-lg">
+                    <Activity className="h-8 w-8 mx-auto text-purple-600 mb-2" />
+                    <h4 className="font-semibold text-gray-900 dark:text-white">Weight</h4>
+                    <p className="text-2xl font-bold text-purple-600">{vitals.weight}</p>
+                  </div>
+                  <div className="text-center p-4 bg-indigo-50 rounded-lg">
+                    <Activity className="h-8 w-8 mx-auto text-indigo-600 mb-2" />
+                    <h4 className="font-semibold text-gray-900 dark:text-white">Height</h4>
+                    <p className="text-2xl font-bold text-indigo-600">{vitals.height}</p>
+                  </div>
+                  <div className="text-center p-4 bg-teal-50 rounded-lg">
+                    <Activity className="h-8 w-8 mx-auto text-teal-600 mb-2" />
+                    <h4 className="font-semibold text-gray-900 dark:text-white">BMI</h4>
+                    <p className="text-2xl font-bold text-teal-600">{vitals.bmi}</p>
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <Activity className="h-8 w-8 mx-auto text-green-600 mb-2" />
-                  <h4 className="font-semibold text-gray-900">Heart Rate</h4>
-                  <p className="text-2xl font-bold text-green-600">{vitals.heartRate}</p>
-                </div>
-                <div className="text-center p-4 bg-orange-50 rounded-lg">
-                  <Activity className="h-8 w-8 mx-auto text-orange-600 mb-2" />
-                  <h4 className="font-semibold text-gray-900">Temperature</h4>
-                  <p className="text-2xl font-bold text-orange-600">{vitals.temperature}</p>
-                </div>
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <Activity className="h-8 w-8 mx-auto text-purple-600 mb-2" />
-                  <h4 className="font-semibold text-gray-900">Weight</h4>
-                  <p className="text-2xl font-bold text-purple-600">{vitals.weight}</p>
-                </div>
-                <div className="text-center p-4 bg-indigo-50 rounded-lg">
-                  <Activity className="h-8 w-8 mx-auto text-indigo-600 mb-2" />
-                  <h4 className="font-semibold text-gray-900">Height</h4>
-                  <p className="text-2xl font-bold text-indigo-600">{vitals.height}</p>
-                </div>
-                <div className="text-center p-4 bg-teal-50 rounded-lg">
-                  <Activity className="h-8 w-8 mx-auto text-teal-600 mb-2" />
-                  <h4 className="font-semibold text-gray-900">BMI</h4>
-                  <p className="text-2xl font-bold text-teal-600">{vitals.bmi}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </ThreeDAnimatedCard>
         </TabsContent>
 
         <TabsContent value="medications" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Current Medications</CardTitle>
-              <CardDescription>Active prescriptions and dosages</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {medications.map((med, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{med.name}</h4>
-                      <p className="text-gray-600">{med.dosage} • {med.frequency}</p>
-                      <p className="text-sm text-gray-500">Prescribed: {med.prescribed}</p>
+          <ThreeDAnimatedCard>
+            <Card className="bg-white/30 backdrop-blur-lg shadow-2xl border border-white/20 rounded-2xl overflow-hidden">
+              <CardHeader>
+                <CardTitle>Current Medications</CardTitle>
+                <CardDescription>Active prescriptions and dosages</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {medications.map((med, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">{med.name}</h4>
+                        <p className="text-gray-600 dark:text-white">{med.dosage} • {med.frequency}</p>
+                        <p className="text-sm text-gray-500 dark:text-white">Prescribed: {med.prescribed}</p>
+                      </div>
+                      <Badge variant="outline">Active</Badge>
                     </div>
-                    <Badge variant="outline">Active</Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </ThreeDAnimatedCard>
         </TabsContent>
 
         <TabsContent value="labs" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Lab Results</CardTitle>
-              <CardDescription>Latest laboratory test results</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {labResults.map((lab, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{lab.test}</h4>
-                      <p className="text-gray-600">Normal range: {lab.range}</p>
-                      <p className="text-sm text-gray-500">Date: {lab.date}</p>
+          <ThreeDAnimatedCard>
+            <Card className="bg-white/30 backdrop-blur-lg shadow-2xl border border-white/20 rounded-2xl overflow-hidden">
+              <CardHeader>
+                <CardTitle>Recent Lab Results</CardTitle>
+                <CardDescription>Latest laboratory test results</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {labResults.map((lab, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">{lab.test}</h4>
+                        <p className="text-gray-600 dark:text-white">Normal range: {lab.range}</p>
+                        <p className="text-sm text-gray-500 dark:text-white">Date: {lab.date}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-xl font-bold ${getStatusColor(lab.status)}`}>
+                          {lab.value}
+                        </p>
+                        <Badge variant={lab.status === 'normal' ? 'default' : 'destructive'}>
+                          {lab.status}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className={`text-xl font-bold ${getStatusColor(lab.status)}`}>
-                        {lab.value}
-                      </p>
-                      <Badge variant={lab.status === 'normal' ? 'default' : 'destructive'}>
-                        {lab.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </ThreeDAnimatedCard>
         </TabsContent>
 
         <TabsContent value="appointments" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Appointment History</CardTitle>
-              <CardDescription>Past and upcoming appointments</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {appointments.map((apt, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className="text-center">
-                        <Calendar className="h-6 w-6 text-blue-600 mx-auto" />
-                        <p className="text-sm font-medium">{apt.date}</p>
-                        <p className="text-xs text-gray-500">{apt.time}</p>
+          <ThreeDAnimatedCard>
+            <Card className="bg-white/30 backdrop-blur-lg shadow-2xl border border-white/20 rounded-2xl overflow-hidden">
+              <CardHeader>
+                <CardTitle>Appointment History</CardTitle>
+                <CardDescription>Past and upcoming appointments</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {appointments.map((apt, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <div className="text-center">
+                          <Calendar className="h-6 w-6 text-blue-600 mx-auto" />
+                          <p className="text-sm font-medium">{apt.date}</p>
+                          <p className="text-xs text-gray-500 dark:text-white">{apt.time}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900 dark:text-white">{apt.type}</h4>
+                          <p className="text-gray-600 dark:text-white">{apt.doctor}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900">{apt.type}</h4>
-                        <p className="text-gray-600">{apt.doctor}</p>
-                      </div>
+                      <Badge variant={apt.status === 'completed' ? 'default' : 'secondary'}>
+                        {apt.status}
+                      </Badge>
                     </div>
-                    <Badge variant={apt.status === 'completed' ? 'default' : 'secondary'}>
-                      {apt.status}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </ThreeDAnimatedCard>
         </TabsContent>
       </Tabs>
     </div>

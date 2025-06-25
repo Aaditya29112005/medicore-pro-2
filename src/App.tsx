@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -11,6 +10,9 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LoginForm from "./components/auth/LoginForm";
 import SignupForm from "./components/auth/SignupForm";
+import ResetPassword from './pages/ResetPassword';
+import { ThemeProvider } from 'next-themes';
+import DoctorDirectory from "./components/DoctorDirectory";
 
 const queryClient = new QueryClient();
 
@@ -39,7 +41,7 @@ const App = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading MediCore Pro...</p>
@@ -51,34 +53,46 @@ const App = () => {
   // Show authentication forms if no session
   if (!session) {
     return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          {showSignup ? (
-            <SignupForm onSwitchToLogin={() => setShowSignup(false)} />
-          ) : (
-            <LoginForm onSwitchToSignup={() => setShowSignup(true)} />
-          )}
-        </TooltipProvider>
-      </QueryClientProvider>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <div className="min-h-screen bg-white dark:bg-gray-950">
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/login" element={<LoginForm onSwitchToSignup={() => setShowSignup(true)} />} />
+                  <Route path="/signup" element={<SignupForm onSwitchToLogin={() => setShowSignup(false)} />} />
+                  <Route path="*" element={showSignup ? <SignupForm onSwitchToLogin={() => setShowSignup(false)} /> : <LoginForm onSwitchToSignup={() => setShowSignup(true)} />} />
+                </Routes>
+              </BrowserRouter>
+            </div>
+          </TooltipProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
     );
   }
 
   // Show main application if authenticated
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <div className="min-h-screen bg-white dark:bg-gray-950">
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/doctors" element={<DoctorDirectory />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </div>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 };
 

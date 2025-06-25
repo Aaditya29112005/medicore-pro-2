@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,8 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Eye, EyeOff, Activity } from "lucide-react";
+import FloatingParticles from "@/components/FloatingParticles";
+import { motion } from "framer-motion";
 
 interface SignupFormProps {
   onSwitchToLogin: () => void;
@@ -24,16 +25,42 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
     specialization: "",
     licenseNumber: "",
     phone: "",
+    username: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const { toast } = useToast();
+  const [usernameCheckLoading, setUsernameCheckLoading] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    if (!formData.username || formData.username.length < 3) {
+      setError("Username is required and must be at least 3 characters.");
+      setLoading(false);
+      return;
+    }
+
+    // Check if username is unique
+    setUsernameCheckLoading(true);
+    const { data: existing, error: usernameError } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('username', formData.username)
+      .single();
+    setUsernameCheckLoading(false);
+    if (existing) {
+      setError('Username already taken. Please choose another.');
+      setLoading(false);
+      return;
+    }
+    if (usernameError && usernameError.code !== 'PGRST116') {
+      setError('Error checking username uniqueness.');
+      setLoading(false);
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
@@ -48,11 +75,13 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      console.log("Attempting to sign up user:", { email: formData.email, username: formData.username, fullName: formData.fullName, role: formData.role });
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
           data: {
+            username: formData.username,
             full_name: formData.fullName,
             role: formData.role,
             specialization: formData.specialization,
@@ -61,17 +90,19 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
           },
         },
       });
-
+      console.log("Supabase signup response:", { data, error });
       if (error) {
+        console.error("Signup error:", error);
         setError(error.message);
+      } else if (!data?.user) {
+        setError("No user returned from Supabase. Check your email for a verification link.");
       } else {
-        toast({
-          title: "Account created successfully!",
-          description: "Please check your email to verify your account.",
-        });
+        console.log("Signup successful", data);
+        toast.success("Account created successfully! Please check your email to verify your account.");
         onSwitchToLogin();
       }
     } catch (err) {
+      console.error("Unexpected signup error:", err);
       setError("An unexpected error occurred");
     } finally {
       setLoading(false);
@@ -83,12 +114,42 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black relative flex items-center justify-center p-4 overflow-hidden">
       <Card className="w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <Activity className="h-8 w-8 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-900">MediCore Pro</h1>
+            <motion.div className="relative flex items-center">
+              <motion.h1
+                className="text-2xl font-bold text-gray-900 flex relative z-10"
+                initial="hidden"
+                animate="show"
+                variants={{
+                  hidden: {},
+                  show: { transition: { staggerChildren: 0.07 } }
+                }}
+              >
+                {[...'MediCore Pro'].map((char, i) => (
+                  <motion.span
+                    key={i}
+                    variants={{
+                      hidden: { opacity: 0, y: 24 },
+                      show: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+                    }}
+                    style={{
+                      display: char === ' ' ? 'inline-block' : 'inline',
+                      animation: char !== ' ' ? `colorCycle 2s linear infinite ${i * 0.1}s` : undefined,
+                      perspective: '400px',
+                    }}
+                    className="animated-letter-3d text-gray-900 dark:text-white"
+                    whileHover={{ rotateY: 20, scale: 1.15 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  >
+                    {char === ' ' ? '\u00A0' : char}
+                  </motion.span>
+                ))}
+              </motion.h1>
+            </motion.div>
           </div>
           <CardTitle className="text-xl">Create Account</CardTitle>
           <CardDescription>Join the advanced medical platform</CardDescription>
@@ -170,6 +231,20 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
             </div>
             
             <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                placeholder="Unique username"
+                value={formData.username || ''}
+                onChange={(e) => updateFormData("username", e.target.value)}
+                required
+                minLength={3}
+                className="bg-white/20 text-black focus:bg-white/30 focus:ring-2 focus:ring-black border border-white/20 rounded-xl py-3 px-4 transition-all"
+              />
+              {usernameCheckLoading && <div className="text-xs text-black/60">Checking username...</div>}
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Input
@@ -208,8 +283,12 @@ const SignupForm = ({ onSwitchToLogin }: SignupFormProps) => {
               />
             </div>
             
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating account..." : "Create Account"}
+            <Button
+              type="submit"
+              className="w-full py-3 text-lg font-semibold bg-black hover:bg-white hover:text-black text-white shadow-lg rounded-xl transition-all duration-200 border border-white/20"
+              disabled={loading}
+            >
+              {loading ? "Signing up..." : "Sign Up"}
             </Button>
           </form>
           

@@ -1,4 +1,3 @@
-
 -- Create enum types for medical data
 CREATE TYPE public.user_role AS ENUM ('doctor', 'admin', 'nurse');
 CREATE TYPE public.patient_status AS ENUM ('stable', 'monitoring', 'treatment', 'critical', 'discharged');
@@ -152,6 +151,9 @@ CREATE POLICY "Users can view their own profile" ON public.profiles
 CREATE POLICY "Users can update their own profile" ON public.profiles
   FOR UPDATE USING (auth.uid() = id);
 
+CREATE POLICY "Allow trigger function to insert profiles" ON public.profiles
+  FOR INSERT WITH CHECK (true);
+
 -- Create RLS policies for diseases (public read access)
 CREATE POLICY "Anyone can view diseases" ON public.diseases
   FOR SELECT USING (true);
@@ -213,12 +215,15 @@ LANGUAGE plpgsql
 SECURITY definer SET search_path = public
 AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, full_name, role)
+  INSERT INTO public.profiles (id, email, full_name, role, specialization, license_number, phone)
   VALUES (
     new.id,
     new.email,
     COALESCE(new.raw_user_meta_data->>'full_name', new.email),
-    COALESCE((new.raw_user_meta_data->>'role')::user_role, 'doctor')
+    COALESCE((new.raw_user_meta_data->>'role')::user_role, 'doctor'),
+    new.raw_user_meta_data->>'specialization',
+    new.raw_user_meta_data->>'license_number',
+    new.raw_user_meta_data->>'phone'
   );
   RETURN new;
 END;
@@ -249,32 +254,54 @@ INSERT INTO public.diseases (name, icd_code, category, description, symptoms, ri
  ARRAY['Triptans', 'Pain relievers', 'Preventive medications', 'Lifestyle modifications'],
  'Good with proper trigger management and medication'),
 
-('Coronary Artery Disease', 'I25', 'Cardiovascular', 'Narrowing of coronary arteries',
- ARRAY['Chest pain', 'Shortness of breath', 'Fatigue', 'Heart palpitations'],
- ARRAY['High cholesterol', 'Smoking', 'Diabetes', 'High blood pressure', 'Family history'],
- ARRAY['Statins', 'Blood thinners', 'Angioplasty', 'Bypass surgery', 'Lifestyle changes'],
- 'Variable depending on severity and treatment compliance'),
+('Asthma', 'J45', 'Respiratory', 'Chronic inflammatory disease of the airways',
+ ARRAY['Wheezing', 'Shortness of breath', 'Chest tightness', 'Coughing', 'Difficulty breathing'],
+ ARRAY['Family history', 'Allergies', 'Environmental factors', 'Respiratory infections'],
+ ARRAY['Inhaled corticosteroids', 'Bronchodilators', 'Avoiding triggers', 'Regular monitoring'],
+ 'Good with proper medication and trigger avoidance'),
 
-('Asthma', 'J45', 'Respiratory', 'Chronic inflammatory airway disease',
- ARRAY['Wheezing', 'Coughing', 'Shortness of breath', 'Chest tightness'],
- ARRAY['Allergies', 'Family history', 'Environmental factors', 'Respiratory infections'],
- ARRAY['Inhaled corticosteroids', 'Bronchodilators', 'Allergy medications', 'Trigger avoidance'],
- 'Excellent with proper management and medication compliance'),
-
-('Osteoarthritis', 'M15', 'Musculoskeletal', 'Degenerative joint disease',
- ARRAY['Joint pain', 'Stiffness', 'Swelling', 'Reduced range of motion'],
- ARRAY['Age', 'Obesity', 'Joint injury', 'Genetics', 'Repetitive stress'],
- ARRAY['NSAIDs', 'Physical therapy', 'Weight management', 'Joint replacement'],
- 'Progressive condition, symptoms manageable with treatment'),
-
-('Depression', 'F32', 'Mental Health', 'Persistent mood disorder affecting daily functioning',
- ARRAY['Persistent sadness', 'Loss of interest', 'Fatigue', 'Sleep disturbances', 'Concentration problems'],
- ARRAY['Family history', 'Trauma', 'Chronic illness', 'Substance abuse', 'Stress'],
+('Depression', 'F32', 'Mental Health', 'Mood disorder causing persistent sadness and loss of interest',
+ ARRAY['Persistent sadness', 'Loss of interest', 'Fatigue', 'Sleep problems', 'Appetite changes'],
+ ARRAY['Family history', 'Life events', 'Medical conditions', 'Substance abuse'],
  ARRAY['Antidepressants', 'Psychotherapy', 'Lifestyle changes', 'Support groups'],
- 'Good with appropriate treatment and support'),
+ 'Good with proper treatment and support'),
+
+('Osteoarthritis', 'M15', 'Musculoskeletal', 'Degenerative joint disease causing pain and stiffness',
+ ARRAY['Joint pain', 'Stiffness', 'Reduced range of motion', 'Swelling', 'Crepitus'],
+ ARRAY['Age', 'Obesity', 'Joint injury', 'Repetitive stress', 'Genetics'],
+ ARRAY['Pain relievers', 'Physical therapy', 'Weight management', 'Joint protection'],
+ 'Manageable with proper care and lifestyle modifications'),
 
 ('Pneumonia', 'J18', 'Respiratory', 'Infection causing inflammation in lung air sacs',
  ARRAY['Cough with phlegm', 'Fever', 'Chills', 'Difficulty breathing', 'Chest pain'],
  ARRAY['Age extremes', 'Smoking', 'Chronic diseases', 'Weakened immune system'],
  ARRAY['Antibiotics', 'Antiviral medications', 'Rest', 'Hydration', 'Oxygen therapy'],
  'Excellent with prompt treatment, may be serious in elderly or immunocompromised');
+
+-- Create storage bucket for patient reports
+INSERT INTO storage.buckets (id, name, public) VALUES ('patient-reports', 'patient-reports', false);
+
+-- Create storage policies for patient reports
+CREATE POLICY "Authenticated users can upload patient reports" ON storage.objects
+  FOR INSERT WITH CHECK (
+    bucket_id = 'patient-reports' AND 
+    auth.role() = 'authenticated'
+  );
+
+CREATE POLICY "Authenticated users can view patient reports" ON storage.objects
+  FOR SELECT USING (
+    bucket_id = 'patient-reports' AND 
+    auth.role() = 'authenticated'
+  );
+
+CREATE POLICY "Authenticated users can update patient reports" ON storage.objects
+  FOR UPDATE USING (
+    bucket_id = 'patient-reports' AND 
+    auth.role() = 'authenticated'
+  );
+
+CREATE POLICY "Authenticated users can delete patient reports" ON storage.objects
+  FOR DELETE USING (
+    bucket_id = 'patient-reports' AND 
+    auth.role() = 'authenticated'
+  );

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Pill, Plus, AlertTriangle, Calendar, User, FileText, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import ThreeDAnimatedCard from '@/components/ui/3DAnimatedCard';
 
 interface Prescription {
   id: string;
@@ -155,187 +155,190 @@ const PrescriptionManager = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">Prescription Management</h2>
-              <p className="text-indigo-100 mt-1">Digital prescription system with drug interaction checking</p>
+    <div className="space-y-6 relative">
+      <ThreeDAnimatedCard>
+        <Card className="bg-gradient-to-r from-purple-600 to-blue-500 text-white shadow-2xl border border-white/20 hover:shadow-blue-200/40 transition-shadow duration-300 rounded-2xl overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">Prescription Management</h2>
+                <p className="text-indigo-100 mt-1">Digital prescription system with drug interaction checking</p>
+              </div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-white/30">
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Prescription
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Create New Prescription</DialogTitle>
+                    <DialogDescription>Fill out the prescription details below</DialogDescription>
+                  </DialogHeader>
+                  <div className="grid grid-cols-2 gap-4 py-4">
+                    <div className="col-span-2">
+                      <Label htmlFor="patient">Patient</Label>
+                      <Select value={selectedPatient} onValueChange={setSelectedPatient}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select patient" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="p1">Sarah Johnson</SelectItem>
+                          <SelectItem value="p2">Michael Chen</SelectItem>
+                          <SelectItem value="p3">Emily Rodriguez</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="medication">Medication</Label>
+                      <Input
+                        id="medication"
+                        value={newPrescription.medication}
+                        onChange={(e) => setNewPrescription(prev => ({ ...prev, medication: e.target.value }))}
+                        placeholder="Enter medication name"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="dosage">Dosage</Label>
+                      <Input
+                        id="dosage"
+                        value={newPrescription.dosage}
+                        onChange={(e) => setNewPrescription(prev => ({ ...prev, dosage: e.target.value }))}
+                        placeholder="e.g., 10mg"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="frequency">Frequency</Label>
+                      <Select 
+                        value={newPrescription.frequency} 
+                        onValueChange={(value) => setNewPrescription(prev => ({ ...prev, frequency: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="once-daily">Once daily</SelectItem>
+                          <SelectItem value="twice-daily">Twice daily</SelectItem>
+                          <SelectItem value="three-times-daily">Three times daily</SelectItem>
+                          <SelectItem value="as-needed">As needed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="duration">Duration</Label>
+                      <Input
+                        id="duration"
+                        value={newPrescription.duration}
+                        onChange={(e) => setNewPrescription(prev => ({ ...prev, duration: e.target.value }))}
+                        placeholder="e.g., 30 days"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="instructions">Instructions</Label>
+                      <Textarea
+                        id="instructions"
+                        value={newPrescription.instructions}
+                        onChange={(e) => setNewPrescription(prev => ({ ...prev, instructions: e.target.value }))}
+                        placeholder="Special instructions for the patient"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="refills">Number of Refills</Label>
+                      <Input
+                        id="refills"
+                        type="number"
+                        value={newPrescription.refills}
+                        onChange={(e) => setNewPrescription(prev => ({ ...prev, refills: e.target.value }))}
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                  <Button onClick={handleCreatePrescription} className="w-full">
+                    Create Prescription
+                  </Button>
+                </DialogContent>
+              </Dialog>
             </div>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-white/30">
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Prescription
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Create New Prescription</DialogTitle>
-                  <DialogDescription>Fill out the prescription details below</DialogDescription>
-                </DialogHeader>
-                <div className="grid grid-cols-2 gap-4 py-4">
-                  <div className="col-span-2">
-                    <Label htmlFor="patient">Patient</Label>
-                    <Select value={selectedPatient} onValueChange={setSelectedPatient}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select patient" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="p1">Sarah Johnson</SelectItem>
-                        <SelectItem value="p2">Michael Chen</SelectItem>
-                        <SelectItem value="p3">Emily Rodriguez</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="medication">Medication</Label>
-                    <Input
-                      id="medication"
-                      value={newPrescription.medication}
-                      onChange={(e) => setNewPrescription(prev => ({ ...prev, medication: e.target.value }))}
-                      placeholder="Enter medication name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="dosage">Dosage</Label>
-                    <Input
-                      id="dosage"
-                      value={newPrescription.dosage}
-                      onChange={(e) => setNewPrescription(prev => ({ ...prev, dosage: e.target.value }))}
-                      placeholder="e.g., 10mg"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="frequency">Frequency</Label>
-                    <Select 
-                      value={newPrescription.frequency} 
-                      onValueChange={(value) => setNewPrescription(prev => ({ ...prev, frequency: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select frequency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="once-daily">Once daily</SelectItem>
-                        <SelectItem value="twice-daily">Twice daily</SelectItem>
-                        <SelectItem value="three-times-daily">Three times daily</SelectItem>
-                        <SelectItem value="as-needed">As needed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="duration">Duration</Label>
-                    <Input
-                      id="duration"
-                      value={newPrescription.duration}
-                      onChange={(e) => setNewPrescription(prev => ({ ...prev, duration: e.target.value }))}
-                      placeholder="e.g., 30 days"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label htmlFor="instructions">Instructions</Label>
-                    <Textarea
-                      id="instructions"
-                      value={newPrescription.instructions}
-                      onChange={(e) => setNewPrescription(prev => ({ ...prev, instructions: e.target.value }))}
-                      placeholder="Special instructions for the patient"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="refills">Number of Refills</Label>
-                    <Input
-                      id="refills"
-                      type="number"
-                      value={newPrescription.refills}
-                      onChange={(e) => setNewPrescription(prev => ({ ...prev, refills: e.target.value }))}
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-                <Button onClick={handleCreatePrescription} className="w-full">
-                  Create Prescription
-                </Button>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardContent>
-      </Card>
-
+          </CardContent>
+        </Card>
+      </ThreeDAnimatedCard>
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {prescriptions.map(prescription => (
-          <Card key={prescription.id} className="bg-white shadow-md hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg flex items-center">
-                    <Pill className="h-5 w-5 mr-2 text-blue-600" />
-                    {prescription.medication}
-                  </CardTitle>
-                  <CardDescription className="flex items-center mt-1">
-                    <User className="h-3 w-3 mr-1" />
-                    {prescription.patientName}
-                  </CardDescription>
-                </div>
-                <Badge className={getStatusColor(prescription.status)} variant="secondary">
-                  {prescription.status}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium text-gray-700">Dosage:</span>
-                  <p className="text-gray-900">{prescription.dosage}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Frequency:</span>
-                  <p className="text-gray-900">{prescription.frequency}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Duration:</span>
-                  <p className="text-gray-900">{prescription.duration}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Refills:</span>
-                  <p className="text-gray-900">{prescription.refillsRemaining}/{prescription.totalRefills}</p>
-                </div>
-              </div>
-
-              {prescription.instructions && (
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-800">{prescription.instructions}</p>
-                </div>
-              )}
-
-              {prescription.interactions.length > 0 && (
-                <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <div className="flex items-center mb-1">
-                    <AlertTriangle className="h-4 w-4 text-yellow-600 mr-1" />
-                    <span className="text-sm font-medium text-yellow-800">Drug Interactions</span>
+        {prescriptions.map((prescription) => (
+          <ThreeDAnimatedCard key={prescription.id}>
+            <Card className="bg-white/30 backdrop-blur-lg shadow-2xl border border-white/20 rounded-2xl overflow-hidden">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-lg flex items-center">
+                      <Pill className="h-5 w-5 mr-2 text-blue-600" />
+                      {prescription.medication}
+                    </CardTitle>
+                    <CardDescription className="flex items-center mt-1">
+                      <User className="h-3 w-3 mr-1" />
+                      {prescription.patientName}
+                    </CardDescription>
                   </div>
-                  <p className="text-xs text-yellow-700">{prescription.interactions.join(", ")}</p>
+                  <Badge className={getStatusColor(prescription.status)} variant="secondary">
+                    {prescription.status}
+                  </Badge>
                 </div>
-              )}
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-700 dark:text-white">Dosage:</span>
+                    <p className="text-gray-900 dark:text-white">{prescription.dosage}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700 dark:text-white">Frequency:</span>
+                    <p className="text-gray-900 dark:text-white">{prescription.frequency}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700 dark:text-white">Duration:</span>
+                    <p className="text-gray-900 dark:text-white">{prescription.duration}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700 dark:text-white">Refills:</span>
+                    <p className="text-gray-900 dark:text-white">{prescription.refillsRemaining}/{prescription.totalRefills}</p>
+                  </div>
+                </div>
 
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                <div className="text-xs text-gray-500">
-                  <Calendar className="h-3 w-3 inline mr-1" />
-                  {prescription.prescribedDate}
+                {prescription.instructions && (
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-blue-800">{prescription.instructions}</p>
+                  </div>
+                )}
+
+                {prescription.interactions.length > 0 && (
+                  <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div className="flex items-center mb-1">
+                      <AlertTriangle className="h-4 w-4 text-yellow-600 mr-1" />
+                      <span className="text-sm font-medium text-yellow-800">Drug Interactions</span>
+                    </div>
+                    <p className="text-xs text-yellow-700">{prescription.interactions.join(", ")}</p>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                  <div className="text-xs text-gray-500 dark:text-white">
+                    <Calendar className="h-3 w-3 inline mr-1" />
+                    {prescription.prescribedDate}
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button size="sm" variant="outline">
+                      <FileText className="h-3 w-3 mr-1" />
+                      Print
+                    </Button>
+                    <Button size="sm" variant="outline">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Refill
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex space-x-2">
-                  <Button size="sm" variant="outline">
-                    <FileText className="h-3 w-3 mr-1" />
-                    Print
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    Refill
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </ThreeDAnimatedCard>
         ))}
       </div>
     </div>

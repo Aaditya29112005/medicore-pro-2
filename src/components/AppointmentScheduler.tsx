@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Calendar, Clock, User, Phone, Mail, Plus, Filter } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import ThreeDAnimatedCard from '@/components/ui/3DAnimatedCard';
 
 interface Appointment {
   id: string;
@@ -163,6 +163,18 @@ const AppointmentScheduler = () => {
     return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
   });
 
+  const handleToggleCompleted = (id: string) => {
+    setAppointments(prev => prev.map(app =>
+      app.id === id
+        ? { ...app, status: app.status === 'completed' ? 'scheduled' : 'completed' }
+        : app
+    ));
+    toast({
+      title: 'Status Updated',
+      description: 'Appointment status has been updated.',
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -172,116 +184,118 @@ const AppointmentScheduler = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="bg-gradient-to-r from-teal-600 to-green-600 text-white shadow-lg">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">Appointment Scheduler</h2>
-              <p className="text-teal-100 mt-1">Intelligent scheduling system with conflict detection</p>
+    <div className="space-y-6 relative">
+      <ThreeDAnimatedCard>
+        <Card className="bg-gradient-to-r from-purple-600 to-blue-500 text-white shadow-2xl border border-white/20 hover:shadow-blue-200/40 transition-shadow duration-300 rounded-2xl overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">Appointment Scheduler</h2>
+                <p className="text-teal-100 mt-1">Intelligent scheduling system with conflict detection</p>
+              </div>
+              <div className="flex space-x-3">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-white/30">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Schedule Appointment
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Schedule New Appointment</DialogTitle>
+                      <DialogDescription>Book a new patient appointment</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid grid-cols-2 gap-4 py-4">
+                      <div>
+                        <Label htmlFor="patient-name">Patient Name</Label>
+                        <Input
+                          id="patient-name"
+                          value={newAppointment.patientName}
+                          onChange={(e) => setNewAppointment(prev => ({ ...prev, patientName: e.target.value }))}
+                          placeholder="Enter patient name"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="appointment-type">Appointment Type</Label>
+                        <Select 
+                          value={newAppointment.appointmentType} 
+                          onValueChange={(value) => setNewAppointment(prev => ({ ...prev, appointmentType: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="consultation">Consultation</SelectItem>
+                            <SelectItem value="follow-up">Follow-up</SelectItem>
+                            <SelectItem value="check-up">Check-up</SelectItem>
+                            <SelectItem value="procedure">Procedure</SelectItem>
+                            <SelectItem value="emergency">Emergency</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="date">Date</Label>
+                        <Input
+                          id="date"
+                          type="date"
+                          value={newAppointment.date}
+                          onChange={(e) => setNewAppointment(prev => ({ ...prev, date: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="time">Time</Label>
+                        <Select 
+                          value={newAppointment.time} 
+                          onValueChange={(value) => setNewAppointment(prev => ({ ...prev, time: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select time" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {timeSlots.map(slot => (
+                              <SelectItem key={slot} value={slot}>{slot}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="duration">Duration (minutes)</Label>
+                        <Select 
+                          value={newAppointment.duration} 
+                          onValueChange={(value) => setNewAppointment(prev => ({ ...prev, duration: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="15">15 minutes</SelectItem>
+                            <SelectItem value="30">30 minutes</SelectItem>
+                            <SelectItem value="45">45 minutes</SelectItem>
+                            <SelectItem value="60">60 minutes</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="col-span-2">
+                        <Label htmlFor="notes">Notes</Label>
+                        <Input
+                          id="notes"
+                          value={newAppointment.notes}
+                          onChange={(e) => setNewAppointment(prev => ({ ...prev, notes: e.target.value }))}
+                          placeholder="Additional notes"
+                        />
+                      </div>
+                    </div>
+                    <Button onClick={handleCreateAppointment} className="w-full">
+                      Schedule Appointment
+                    </Button>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
-            <div className="flex space-x-3">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-white/30">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Schedule Appointment
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Schedule New Appointment</DialogTitle>
-                    <DialogDescription>Book a new patient appointment</DialogDescription>
-                  </DialogHeader>
-                  <div className="grid grid-cols-2 gap-4 py-4">
-                    <div>
-                      <Label htmlFor="patient-name">Patient Name</Label>
-                      <Input
-                        id="patient-name"
-                        value={newAppointment.patientName}
-                        onChange={(e) => setNewAppointment(prev => ({ ...prev, patientName: e.target.value }))}
-                        placeholder="Enter patient name"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="appointment-type">Appointment Type</Label>
-                      <Select 
-                        value={newAppointment.appointmentType} 
-                        onValueChange={(value) => setNewAppointment(prev => ({ ...prev, appointmentType: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="consultation">Consultation</SelectItem>
-                          <SelectItem value="follow-up">Follow-up</SelectItem>
-                          <SelectItem value="check-up">Check-up</SelectItem>
-                          <SelectItem value="procedure">Procedure</SelectItem>
-                          <SelectItem value="emergency">Emergency</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="date">Date</Label>
-                      <Input
-                        id="date"
-                        type="date"
-                        value={newAppointment.date}
-                        onChange={(e) => setNewAppointment(prev => ({ ...prev, date: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="time">Time</Label>
-                      <Select 
-                        value={newAppointment.time} 
-                        onValueChange={(value) => setNewAppointment(prev => ({ ...prev, time: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select time" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {timeSlots.map(slot => (
-                            <SelectItem key={slot} value={slot}>{slot}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="duration">Duration (minutes)</Label>
-                      <Select 
-                        value={newAppointment.duration} 
-                        onValueChange={(value) => setNewAppointment(prev => ({ ...prev, duration: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="15">15 minutes</SelectItem>
-                          <SelectItem value="30">30 minutes</SelectItem>
-                          <SelectItem value="45">45 minutes</SelectItem>
-                          <SelectItem value="60">60 minutes</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="col-span-2">
-                      <Label htmlFor="notes">Notes</Label>
-                      <Input
-                        id="notes"
-                        value={newAppointment.notes}
-                        onChange={(e) => setNewAppointment(prev => ({ ...prev, notes: e.target.value }))}
-                        placeholder="Additional notes"
-                      />
-                    </div>
-                  </div>
-                  <Button onClick={handleCreateAppointment} className="w-full">
-                    Schedule Appointment
-                  </Button>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </ThreeDAnimatedCard>
 
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1">
@@ -312,77 +326,90 @@ const AppointmentScheduler = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredAppointments.map(appointment => (
-          <Card key={appointment.id} className={`bg-white shadow-md hover:shadow-lg transition-shadow ${appointment.isUrgent ? 'border-l-4 border-l-red-500' : ''}`}>
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg flex items-center">
-                    <User className="h-5 w-5 mr-2 text-blue-600" />
-                    {appointment.patientName}
-                  </CardTitle>
-                  <CardDescription className="mt-1">
-                    {appointment.appointmentType} • {appointment.department}
-                  </CardDescription>
-                </div>
-                <div className="flex flex-col items-end space-y-1">
-                  <Badge className={getStatusColor(appointment.status)} variant="secondary">
-                    {appointment.status}
-                  </Badge>
-                  {appointment.isUrgent && (
-                    <Badge variant="destructive" className="text-xs">
-                      URGENT
+        {filteredAppointments.map((appointment) => (
+          <ThreeDAnimatedCard key={appointment.id}>
+            <Card className="bg-white/30 backdrop-blur-lg shadow-2xl border border-white/20 rounded-2xl overflow-hidden">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-lg flex items-center">
+                      <User className="h-5 w-5 mr-2 text-blue-600" />
+                      {appointment.patientName}
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                      {appointment.appointmentType} • {appointment.department}
+                    </CardDescription>
+                  </div>
+                  <div className="flex flex-col items-end space-y-1">
+                    <Badge className={getStatusColor(appointment.status)} variant="secondary">
+                      {appointment.status}
                     </Badge>
+                    {appointment.isUrgent && (
+                      <Badge variant="destructive" className="text-xs">
+                        URGENT
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex items-center">
+                    <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                    <span>{appointment.date}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-2 text-gray-500" />
+                    <span>{appointment.time} ({appointment.duration}min)</span>
+                  </div>
+                </div>
+
+                <div className="text-sm">
+                  <span className="font-medium text-gray-700">Doctor: </span>
+                  <span className="text-gray-900">{appointment.doctor}</span>
+                </div>
+
+                {appointment.notes && (
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-700">{appointment.notes}</p>
+                  </div>
+                )}
+
+                <div className="flex space-x-2 pt-3 border-t border-gray-100">
+                  <Button size="sm" variant="outline" className="flex-1">
+                    <Phone className="h-3 w-3 mr-1" />
+                    Call
+                  </Button>
+                  <Button size="sm" variant="outline" className="flex-1">
+                    <Mail className="h-3 w-3 mr-1" />
+                    Email
+                  </Button>
+                  {appointment.status !== 'completed' ? (
+                    <Button size="sm" variant="secondary" className="flex-1" onClick={() => handleToggleCompleted(appointment.id)}>
+                      Mark as Completed
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="destructive" className="flex-1" onClick={() => handleToggleCompleted(appointment.id)}>
+                      Mark as Not Completed
+                    </Button>
                   )}
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                  <span>{appointment.date}</span>
-                </div>
-                <div className="flex items-center">
-                  <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                  <span>{appointment.time} ({appointment.duration}min)</span>
-                </div>
-              </div>
-
-              <div className="text-sm">
-                <span className="font-medium text-gray-700">Doctor: </span>
-                <span className="text-gray-900">{appointment.doctor}</span>
-              </div>
-
-              {appointment.notes && (
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-700">{appointment.notes}</p>
-                </div>
-              )}
-
-              <div className="flex space-x-2 pt-3 border-t border-gray-100">
-                <Button size="sm" variant="outline" className="flex-1">
-                  <Phone className="h-3 w-3 mr-1" />
-                  Call
-                </Button>
-                <Button size="sm" variant="outline" className="flex-1">
-                  <Mail className="h-3 w-3 mr-1" />
-                  Email
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </ThreeDAnimatedCard>
         ))}
       </div>
 
       {filteredAppointments.length === 0 && (
-        <Card className="bg-gray-50 border-dashed border-2 border-gray-300">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Calendar className="h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No appointments found</h3>
-            <p className="text-gray-600 text-center">No appointments scheduled for {selectedDate}</p>
-          </CardContent>
-        </Card>
+        <ThreeDAnimatedCard>
+          <Card className="bg-gray-50 border-dashed border-2 border-gray-300">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Calendar className="h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No appointments found</h3>
+              <p className="text-gray-600 text-center">No appointments scheduled for {selectedDate}</p>
+            </CardContent>
+          </Card>
+        </ThreeDAnimatedCard>
       )}
     </div>
   );

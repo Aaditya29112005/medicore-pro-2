@@ -1,14 +1,15 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Heart, FileText, TestTube, Pill, Calendar, Phone, Mail, MapPin } from "lucide-react";
+import { User, Heart, FileText, TestTube, Pill, Calendar, Phone, Mail, MapPin, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 type Patient = Tables<"patients">;
 type PatientDiagnosis = Tables<"patient_diagnoses"> & {
@@ -136,6 +137,26 @@ const PatientDetailsModal = ({ patient, open, onClose }: PatientDetailsModalProp
     }
   };
 
+  const handleScheduleAppointment = () => {
+    toast.info("Opening appointment scheduler...");
+    // Here you would typically open an appointment scheduling modal
+  };
+
+  const handleNewDiagnosis = () => {
+    toast.info("Opening diagnosis form...");
+    // Here you would typically open a diagnosis form
+  };
+
+  const handleOrderTests = () => {
+    toast.info("Opening test ordering system...");
+    // Here you would typically open a test ordering interface
+  };
+
+  const handleContactPatient = () => {
+    toast.info("Opening patient contact form...");
+    // Here you would typically open a contact form or phone system
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
@@ -208,6 +229,22 @@ const PatientDetailsModal = ({ patient, open, onClose }: PatientDetailsModalProp
                       <Badge variant="outline">{patient.blood_type}</Badge>
                     </div>
                   )}
+                  <Button className="w-full justify-start" variant="outline" onClick={handleScheduleAppointment}>
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Schedule Appointment
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline" onClick={handleNewDiagnosis}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    New Diagnosis
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline" onClick={handleOrderTests}>
+                    <Activity className="h-4 w-4 mr-2" />
+                    Order Tests
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline" onClick={handleContactPatient}>
+                    <Phone className="h-4 w-4 mr-2" />
+                    Contact Patient
+                  </Button>
                 </CardContent>
               </Card>
 
